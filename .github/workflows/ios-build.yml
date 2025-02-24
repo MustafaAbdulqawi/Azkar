@@ -1,42 +1,40 @@
-name: Build iOS IPA
+name: iOS-ipa-build
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-ios:
+    name: 🎉 iOS Build
     runs-on: macos-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Xcode
-        run: sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
-
-      - name: Install Dependencies
-        run: |
-          brew install fastlane
-          gem install bundler
-          cd ios && bundle install
-
-      - name: Build IPA
-        run: |
-          xcodebuild -workspace Akar.xcworkspace \
-          -scheme Akar \
-          -sdk iphoneos \
-          -configuration Release \
-          -archivePath build/Akar.xcarchive archive
-
-          xcodebuild -exportArchive \
-          -archivePath build/Akar.xcarchive \
-          -exportPath build/ \
-          -exportOptionsPlist ExportOptions.plist
-
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
+      - uses: subosito/flutter-action@v2
         with:
-          name: Akar-IPA
-          path: build/*.ipa
+          channel: 'stable'
+          architecture: x64
+
+      - run: flutter pub get
+
+      # ✅ التحقق من أن مجلد iOS موجود
+      - name: Check if iOS directory exists
+        run: ls -la ios
+
+      # ✅ تنظيف المشروع وإعادة تثبيت الحزم
+      - name: Clean and reset iOS project
+        run: |
+          flutter clean
+          rm -rf ios/Pods ios/.symlinks ios/Flutter/Flutter.podspec ios/Flutter/Release.xcconfig
+          flutter pub get
+
+      # ✅ تثبيت CocoaPods وإنشاء Akar.xcworkspace
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          rm -rf Pods Podfile.lock
+          pod install --verbose
+          cd ..
+
+      # ✅ تنفيذ البناء
+      - run: flutter build ios --release --no-codesign
