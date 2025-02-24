@@ -209,7 +209,7 @@ class _QuranScreenState extends State<QuranScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
+    double screenHeight = MediaQuery.of(context).size.height; //
 
     return Scaffold(
       backgroundColor: const Color(0XFFfefff8),
