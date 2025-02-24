@@ -23,18 +23,30 @@ jobs:
           flutter doctor -v
           ls -la ios/Flutter/
 
-      - name: Clean Flutter project
+      - name: Clean and prepare Flutter project
         run: |
           flutter clean
           flutter pub get
+          flutter precache --ios  # نجيب ملفات Flutter المهمة لـ iOS
+
+      - name: Ensure Release.xcconfig exists
+        run: |
+          mkdir -p ios/Flutter
+          if [ ! -f ios/Flutter/Release.xcconfig ]; then
+            echo "FlutterApp: Release config" > ios/Flutter/Release.xcconfig
+            echo "Created a dummy Release.xcconfig"
+          fi
+          ls -la ios/Flutter/
 
       - name: Install CocoaPods dependencies
         run: |
           cd ios
-          pod deintegrate || true  # لو فيه مشكلة قديمة في الـ Pods
+          pod deintegrate || true
           pod cache clean --all
+          pod setup || true  # نضمن إن الـ CocoaPods جاهزة
           pod install --verbose
-          ls -la Pods/  # نتأكد إن الملفات اتولدت
+          ls -la Pods/ || echo "Pods directory not found"
+          ls -la Pods/Target\ Support\ Files/Pods-Runner/ || echo "Pods-Runner files not found"
           cd ..
 
       - name: Build iOS app
